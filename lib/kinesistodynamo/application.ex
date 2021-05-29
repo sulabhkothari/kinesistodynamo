@@ -27,7 +27,7 @@ defmodule Kinesistodynamo.Application do
     ]
 
     children = [
-      {KinesisProducer, 0}
+      {KinesisConsumer, 0}
       # Starts a worker by calling: Kinesistodynamo.Worker.start_link(arg)
       # {Kinesistodynamo.Worker, arg}
     ]
