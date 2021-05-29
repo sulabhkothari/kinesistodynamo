@@ -10,21 +10,21 @@ defmodule KinesisConsumer do
       producer: [
         module: {KinesisProducer, []},
         #transformer: {__MODULE__, :transform, []},
-        concurrency: 1
+        concurrency: 3
       ],
       processors: [
         default: [
-          #concurrency: 2,
-          min_demand: 1,
-          max_demand: 2
+          concurrency: 3,
+          min_demand: 0,
+          max_demand: 1
         ]
       ],
       partition_by: &partition/1
     )
   end
 
-  defp partition(msg) do
-    rem(msg.data, 2)
+  defp partition(%{data: {partition_by_id, _, _}}) do
+    :erlang.phash2(partition_by_id)
   end
 
 #  def transform(event, _opts) do
@@ -36,22 +36,22 @@ defmodule KinesisConsumer do
 #  end
 
   @impl true
-  def handle_message(_, %{data: d} = message, _) when rem(d,2) == 0 do
-    Logger.info("************  Failing ==> #{message |> inspect}**************")
+  def handle_message(_, %{data: {_, str, d}} = message, _) when rem(d,2) != 0 do
+    Logger.info("************  F ==> #{str}     ######  #{d}   **************")
     :timer.sleep(3000)
     Message.failed(message, "Validation failed")
   end
 
   @impl true
-  def handle_message(_, message, _) do
-    Logger.info("************  Success ==> #{message |> inspect}**************")
-    :timer.sleep(10000)
+  def handle_message(_, %{data: {_, str, d}} = message, _) do
+    Logger.info("************  S ==> #{str}     ######  #{d}   **************")
+    :timer.sleep(3000)
     message
   end
 
   @impl true
   def handle_failed(messages, _) do
-    Logger.info("************  Handling FAilure ==> #{messages |> inspect}**************")
+    #Logger.info("************  Handling FAilure ==> #{messages |> inspect}**************")
     # :timer.sleep(10000)
     messages
   end

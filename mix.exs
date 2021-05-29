@@ -29,7 +29,8 @@ defmodule Kinesistodynamo.MixProject do
       {:sweet_xml, "~> 0.6.6"},
       #{:kinesis_client, "~> 0.1.0"}
       #{:kinesis_client, "~> 0.2.0"},
-      {:broadway, "~> 0.6.2"}
+      {:broadway, "~> 0.6.2"},
+      { :uuid, "~> 1.1" }
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
