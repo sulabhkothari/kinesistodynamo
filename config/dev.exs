@@ -1,3 +1,4 @@
+use Mix.Config
 config :ex_aws,
        json_codec: Jason,
        debug_requests: true,
