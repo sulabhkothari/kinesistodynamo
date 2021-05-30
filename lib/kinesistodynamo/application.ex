@@ -25,9 +25,9 @@ defmodule Kinesistodynamo.Application do
         ]
       ]
     ]
-
+    KinesisState.create_table()
     children = [
-      {ShardRegistry, [{"x", "1"}, {"y", "2"}, {"x", "2"}]},
+      {ShardRegistry, [{"astreamoflife", "shardId-000000000000"}]},
       {KinesisConsumer, 0}
       # Starts a worker by calling: Kinesistodynamo.Worker.start_link(arg)
       # {Kinesistodynamo.Worker, arg}

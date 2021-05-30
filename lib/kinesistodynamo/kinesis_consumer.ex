@@ -10,11 +10,11 @@ defmodule KinesisConsumer do
       producer: [
         module: {KinesisProducer, []},
         #transformer: {__MODULE__, :transform, []},
-        concurrency: 3
+        concurrency: 1
       ],
       processors: [
         default: [
-          concurrency: 3,
+          concurrency: 1,
           min_demand: 0,
           max_demand: 1
         ]
@@ -23,36 +23,43 @@ defmodule KinesisConsumer do
     )
   end
 
-  defp partition(%{data: {partition_by_id, _, _}}) do
+  defp partition(%{data: {partition_by_id, _}}) do
     :erlang.phash2(partition_by_id)
   end
 
-#  def transform(event, _opts) do
-#    Logger.info("************  TR ==> #{event}**************")
-#    %Message{
-#      data: event,
-#      acknowledger: {__MODULE__, :ack_id, :ack_data}
-#    }
-#  end
-
   @impl true
-  def handle_message(_, %{data: {_, str, d}} = message, _) when rem(d,2) != 0 do
-    Logger.info("************  F ==> #{str}     ######  #{d}   **************")
+  def handle_message(_, %{data: {_, str}} = message, _) do
+    Logger.info("************  M ==> #{str}**************")
     :timer.sleep(3000)
     Message.failed(message, "Validation failed")
   end
 
-  @impl true
-  def handle_message(_, %{data: {_, str, d}} = message, _) do
-    Logger.info("************  S ==> #{str}     ######  #{d}   **************")
-    :timer.sleep(3000)
-    message
-  end
+  #  def transform(event, _opts) do
+  #    Logger.info("************  TR ==> #{event}**************")
+  #    %Message{
+  #      data: event,
+  #      acknowledger: {__MODULE__, :ack_id, :ack_data}
+  #    }
+  #  end
 
-  @impl true
-  def handle_failed(messages, _) do
-    #Logger.info("************  Handling FAilure ==> #{messages |> inspect}**************")
-    # :timer.sleep(10000)
-    messages
-  end
+#  @impl true
+  #  def handle_message(_, %{data: {_, str, d}} = message, _) when rem(d, 2) != 0 do
+  #    Logger.info("************  F ==> #{str}     ######  #{d}   **************")
+  #    :timer.sleep(3000)
+  #    Message.failed(message, "Validation failed")
+  #  end
+
+  #  @impl true
+  #  def handle_message(_, %{data: {_, str, d}} = message, _) do
+  #    Logger.info("************  S ==> #{str}     ######  #{d}   **************")
+  #    :timer.sleep(3000)
+  #    message
+  #  end
+  #
+  #  @impl true
+  #  def handle_failed(messages, _) do
+  #    #Logger.info("************  Handling FAilure ==> #{messages |> inspect}**************")
+  #    # :timer.sleep(10000)
+  #    messages
+  #  end
 end

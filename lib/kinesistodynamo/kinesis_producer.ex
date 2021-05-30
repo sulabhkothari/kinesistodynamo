@@ -3,33 +3,64 @@ defmodule KinesisProducer do
 
   require Logger
   use GenStage
+  import KinesisCheckpoint
+  import KinesisState
 
   def start_link(initial \\ 0) do
     Logger.info("Starting Producer ...")
     GenStage.start_link(__MODULE__, initial, name: KinesisProducer)
   end
 
+  defp get_shard_iterator(
+         %KinesisCheckpoint{stream_name: nil, shard_id: nil, checkpoint: _},
+         [stream_name: stream_name, shard_id: shard_id]
+       ) do
+    {_, shard_iterator} = ExAws.Kinesis.get_shard_iterator(
+                            stream_name,
+                            shard_id,
+                            :trim_horizon
+                          )
+                          |> ExAws.request
+    shard_iterator
+  end
+
+  defp get_shard_iterator(
+         %KinesisCheckpoint{stream_name: stream_name, shard_id: shard_id, checkpoint: checkpoint},
+         _
+       ) do
+    {_, shard_iterator} = ExAws.Kinesis.get_shard_iterator(
+                            stream_name,
+                            shard_id,
+                            :after_sequence_number,
+                            starting_sequence_number: "1231"
+                          )
+                          |> ExAws.request
+    shard_iterator
+  end
+
   def init(_) do
     {stream_name, shard_id} = ShardRegistry.get_shard()
     producer_id = UUID.uuid1()
     Logger.info("Starting Kinesis Producer  #{producer_id}")
-    shard_iterator = 1
-    #    shard_iterator = KinesisClient.get_shard_iterator(
-    #      "tc-test-26May2021",
-    #      "shardId-000000000000",
-    #      :after_sequence_number
-    #    )
-    {:producer, {stream_name, shard_id, producer_id, 0}}
+    shard_iterator = KinesisState.get_checkpoint(stream_name: stream_name, shard_id: shard_id)
+                     |> get_shard_iterator(stream_name: stream_name, shard_id: shard_id)
+                     |> Map.get("ShardIterator")
+    Logger.info "Shard Iterator initialized"
+    {:producer, {producer_id, shard_iterator}}
   end
 
-  def handle_demand(demand, {stream_name, shard_id, producer_id, checkpoint} = state) do
+  def handle_demand(demand, {producer_id, shard_iterator} = state) do
     #    Logger.info "*******DEMAND=#{demand}**** #{
     #      state
     #      |> inspect
     #    } *******"
-    demanded_data1 = wrap_records({producer_id, "#{stream_name} || #{shard_id} || #{checkpoint}", checkpoint})
-    demanded_data2 = wrap_records({producer_id, "#{stream_name} || #{shard_id} || #{checkpoint + 1}", checkpoint + 1})
-    {:noreply, [demanded_data1, demanded_data2], {stream_name, shard_id, producer_id, checkpoint}}
+    {:ok, %{"NextShardIterator" => next_shard_iterator, "Records" => records}} = ExAws.Kinesis.get_records(
+      shard_iterator,
+      limit: 1
+    ) |> ExAws.request
+    Logger.info "****** #{records |> hd |> Map.get("Data") |> Base.decode64 |> elem(1)} *******"
+    demanded_data = wrap_records({producer_id, "#{producer_id}"})
+    {:noreply, [demanded_data], {producer_id, shard_iterator}}
   end
 
   @impl GenStage

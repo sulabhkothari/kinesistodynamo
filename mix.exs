@@ -22,6 +22,7 @@ defmodule Kinesistodynamo.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:ex_aws_dynamo, "~> 4.0"},
       {:ex_aws_kinesis, "~> 2.0"},
       {:gen_stage, "~> 1.0.0"},
       {:jason, "~> 1.2"},
