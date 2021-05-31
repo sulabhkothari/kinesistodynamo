@@ -11,8 +11,8 @@ defmodule ShardRegistry do
   end
 
   @impl true
-  def handle_call(:get_shard, _from, [{stream_name, shard_id} | tail]) do
-    {:reply, {stream_name, shard_id}, tail}
+  def handle_call(:get_shard, _from, [{stream_name, shard_id, batch_size} | tail]) do
+    {:reply, {stream_name, shard_id, batch_size}, tail}
   end
 
   @impl true

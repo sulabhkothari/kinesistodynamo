@@ -20,13 +20,13 @@ defmodule KinesisState do
           kinesis_checkpoint :: KinesisCheckpoint
         ) :: tuple()
   def update_checkpoint(%KinesisCheckpoint{stream_name: stream_name, shard_id: shard_id, checkpoint: checkpoint}) do
-    Dynamo.transact_write_items(
+    ExAws.Dynamo.transact_write_items(
       update: {
         "KinesisCheckpoint",
         %{stream_name: stream_name, shard_id: shard_id},
         update_expression: "set checkpoint = :checkpoint",
         expression_attribute_values: [
-          checkpoint: "ppe"
+          checkpoint: checkpoint
         ]
       }
     )

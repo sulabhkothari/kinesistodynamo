@@ -28,10 +28,16 @@ defmodule KinesisConsumer do
   end
 
   @impl true
-  def handle_message(_, %{data: {_, str}} = message, _) do
-    Logger.info("************  M ==> #{str}**************")
+  def handle_message(_, %{data: data} = message, _) do
+    Logger.info(
+      "************  M ==> #{
+        data
+        |> inspect
+      }**************"
+    )
     :timer.sleep(3000)
-    Message.failed(message, "Validation failed")
+    message
+    #    Message.failed(message, "Validation failed")
   end
 
   #  def transform(event, _opts) do
@@ -42,7 +48,7 @@ defmodule KinesisConsumer do
   #    }
   #  end
 
-#  @impl true
+  #  @impl true
   #  def handle_message(_, %{data: {_, str, d}} = message, _) when rem(d, 2) != 0 do
   #    Logger.info("************  F ==> #{str}     ######  #{d}   **************")
   #    :timer.sleep(3000)
