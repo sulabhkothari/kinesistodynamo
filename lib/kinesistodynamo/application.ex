@@ -28,8 +28,10 @@ defmodule Kinesistodynamo.Application do
     #KinesisState.create_table()
     :timer.sleep(500)
     children = [
-      {ShardRegistry, [{"astreamoflife", "shardId-000000000000", 5}]},
-      {KinesisConsumer, 0}
+      {ShardRegistry, [{"alphonso1", "shardId-000000000000", 2}]},
+      #{KinesisConsumer, 0}
+      {BufferedProducer, 1},
+      {BufferedConsumer, 34},
       # Starts a worker by calling: Kinesistodynamo.Worker.start_link(arg)
       # {Kinesistodynamo.Worker, arg}
     ]

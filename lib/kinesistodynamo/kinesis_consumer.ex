@@ -28,44 +28,18 @@ defmodule KinesisConsumer do
   end
 
   @impl true
-  def handle_message(_, %{data: data} = message, _) do
-    Logger.info(
-      "************  M ==> #{
-        data
-        |> inspect
-      }**************"
-    )
+  def handle_message(_, %{data: {producer_id, []}} = message, _) do
+    Logger.info "No records found"
     :timer.sleep(3000)
     message
     #    Message.failed(message, "Validation failed")
   end
 
-  #  def transform(event, _opts) do
-  #    Logger.info("************  TR ==> #{event}**************")
-  #    %Message{
-  #      data: event,
-  #      acknowledger: {__MODULE__, :ack_id, :ack_data}
-  #    }
-  #  end
-
-  #  @impl true
-  #  def handle_message(_, %{data: {_, str, d}} = message, _) when rem(d, 2) != 0 do
-  #    Logger.info("************  F ==> #{str}     ######  #{d}   **************")
-  #    :timer.sleep(3000)
-  #    Message.failed(message, "Validation failed")
-  #  end
-
-  #  @impl true
-  #  def handle_message(_, %{data: {_, str, d}} = message, _) do
-  #    Logger.info("************  S ==> #{str}     ######  #{d}   **************")
-  #    :timer.sleep(3000)
-  #    message
-  #  end
-  #
-  #  @impl true
-  #  def handle_failed(messages, _) do
-  #    #Logger.info("************  Handling FAilure ==> #{messages |> inspect}**************")
-  #    # :timer.sleep(10000)
-  #    messages
-  #  end
+  @impl true
+  def handle_message(_, %{data: {_, records}} = message, _) do
+    records |> Enum.map(&(&1 |> Map.get("Data") |> Base.decode64 |> elem(1))) |> Enum.join(".......") |> Logger.info
+    :timer.sleep(10000)
+    message
+    #    Message.failed(message, "Validation failed")
+  end
 end
