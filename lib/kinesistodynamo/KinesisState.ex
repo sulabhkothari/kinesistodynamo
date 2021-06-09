@@ -4,7 +4,9 @@ defmodule KinesisCheckpoint do
 end
 
 defmodule KinesisState do
+  require Logger
   def create_table() do
+    Logger.info "**********HERE"
     ExAws.Dynamo.create_table(
       "KinesisCheckpoint",
       [{:stream_name, :hash}, {:shard_id, :range}],

@@ -37,8 +37,14 @@ defmodule KinesisConsumer do
 
   @impl true
   def handle_message(_, %{data: {_, records}} = message, _) do
-    records |> Enum.map(&(&1 |> Map.get("Data") |> Base.decode64 |> elem(1))) |> Enum.join(".......") |> Logger.info
-    :timer.sleep(10000)
+    Logger.info "************ SUCCESSFUL MESSAGE ========> "
+    # str = records |> Enum.map(&(&1 |> Map.get("Data") |> Base.decode64 |> elem(1))) |> Enum.join(".......")
+    # str |> String.split("\t") |> Enum.each(&IO.puts/1)
+    # Logger.info "*********===========++++++++++++ #{str |> String.split("\t") |> Enum.count}+++++++++++++++++++++"
+    # TSVParser.parse(str) |> IO.inspect
+    MessageProcessor.process(records)
+    :timer.sleep(100000)
+
     message
     #    Message.failed(message, "Validation failed")
   end
