@@ -43,7 +43,7 @@ defmodule KinesisConsumer do
     # Logger.info "*********===========++++++++++++ #{str |> String.split("\t") |> Enum.count}+++++++++++++++++++++"
     # TSVParser.parse(str) |> IO.inspect
     MessageProcessor.process(records)
-    :timer.sleep(100000)
+    :timer.sleep(10000)
 
     message
     #    Message.failed(message, "Validation failed")

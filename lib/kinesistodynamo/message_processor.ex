@@ -14,7 +14,7 @@ defmodule MessageProcessor do
   end
 
   def update(message) do
-    Logger.info "*** Updating message in DynamoDB ***"
+    Logger.info "*** Updating message #{message |> inspect} in DynamoDB ***"
     {:ok, _} = MessagePersistence.update_user_message(
       %Message{
         user_id: message
