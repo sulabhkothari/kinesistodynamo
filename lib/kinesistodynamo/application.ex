@@ -28,8 +28,10 @@ defmodule Kinesistodynamo.Application do
     KinesisState.create_table()
     MessagePersistence.create_table()
     children = [
-      {ShardRegistry,{"snowplow-enrich-good-stream", 1}},
-      {KinesisConsumer, 0},
+      # {ShardRegistry, {"sputnik", 1}},
+      # {KinesisConsumer, 0},
+      {ShardRegistryForTaskSup, {"snowplow-enrich-good-stream", 1}},
+      {Task.Supervisor, name: KinesisListener.Supervisor}
       #{BufferedProducer, 1},
       #{BufferedConsumer, 34},
       # Starts a worker by calling: Kinesistodynamo.Worker.start_link(arg)
@@ -40,5 +42,7 @@ defmodule Kinesistodynamo.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Kinesistodynamo.Supervisor]
     Supervisor.start_link(children, opts)
+    #ShardRegistry.get_shard_count |> IO.puts
+    #KinesisListener.create()
   end
 end

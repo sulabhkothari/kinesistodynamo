@@ -1,4 +1,4 @@
-defmodule ShardRegistry do
+defmodule ShardRegistryForTaskSup do
   use GenServer
   require Logger
 
@@ -12,13 +12,29 @@ defmodule ShardRegistry do
     shard_list = get_shards_from_stream(stream_name) |> Enum.map(&({stream_name, &1, batch_size}))
     IO.puts "#{shard_list |> inspect}"
     Process.send_after(self(), :poll_kinesis_for_shards, 8000)
+    Process.send_after(self(), :start_kinesis_consumers, 100)
     {:ok, {shard_list, %{}}}
   end
 
   @impl true
-  def handle_info(:kill_broadway, state) do
-    GenServer.stop(KinesisConsumer, :normal)
+  def handle_info(:kill_tasksup, state) do
+    GenServer.stop(KinesisListener.Supervisor, :normal)
+    Process.send_after(self(), :start_kinesis_consumers, 100)
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:start_kinesis_consumers, state) do
+    Process.whereis(KinesisListener.Supervisor) |> start_listeners
+    {:noreply, state}
+  end
+
+  def start_listeners(nil) do
+    Process.send_after(self(), :start_kinesis_consumers, 100)
+  end
+
+  def start_listeners(pid) do
+    Task.Supervisor.start_child(KinesisListener.Supervisor, fn -> KinesisListener.create end)
   end
 
   @impl true
@@ -32,8 +48,8 @@ defmodule ShardRegistry do
     if(new_shard_count != curr_shard_count) do
       Logger.info "Stream has been resharded from #{curr_shard_count} to #{new_shard_count} shards"
       # GenServer.stop(KinesisConsumer, :normal)
-      Process.send_after(self(), :kill_broadway, 500)
-      Logger.info "Spawned Broadway Killer"
+      Process.send_after(self(), :kill_tasksup, 500)
+      Logger.info "Spawned TaskSup Killer"
       Process.send_after(self(), :poll_kinesis_for_shards, 8000)
       {:noreply, {new_shard_list, %{}}}
     else
