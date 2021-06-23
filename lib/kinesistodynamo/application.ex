@@ -28,13 +28,7 @@ defmodule Kinesistodynamo.Application do
     KinesisState.create_table()
     MessagePersistence.create_table()
     children = [
-      {ShardRegistry, [
-        #{"alphonso1", "shardId-000000000000", 2},
-        {"snowplow-enrich-good-stream", "shardId-000000000000", 1},
-#        {"clixtream-enrich-good-stream", "shardId-000000000148", 5},
-#        {"clixtream-enrich-good-stream", "shardId-000000000151", 5},
-#        {"clixtream-enrich-good-stream", "shardId-000000000152", 5}
-      ]},
+      {ShardRegistry,{"snowplow-enrich-good-stream", 1}},
       {KinesisConsumer, 0},
       #{BufferedProducer, 1},
       #{BufferedConsumer, 34},

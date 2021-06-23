@@ -50,17 +50,26 @@ defmodule KinesisProducer do
   end
 
   def handle_demand(demand, {producer_id, stream_name, shard_id, batch_size, shard_iterator, _} = state) do
-    {:ok, %{"NextShardIterator" => next_shard_iterator, "Records" => records}} = ExAws.Kinesis.get_records(
-                                                                                   shard_iterator,
-                                                                                   limit: batch_size
-                                                                                 )
-                                                                                 |> ExAws.request
+    {next_shard_iterator, records} = ExAws.Kinesis.get_records(
+                                       shard_iterator,
+                                       limit: batch_size
+                                     )
+                                     |> ExAws.request
+                                     |> process_get_records_result(shard_iterator)
     demanded_data = wrap_records({producer_id, records})
     {:noreply, [demanded_data], {producer_id, stream_name, shard_id, batch_size, shard_iterator, next_shard_iterator}}
   end
 
+  def process_get_records_result({:ok, %{"NextShardIterator" => next_shard_iterator, "Records" => records}}, _) do
+    {next_shard_iterator, records}
+  end
+
+  def process_get_records_result(_, shard_iterator) do
+    {shard_iterator, []}
+  end
+
   @impl GenStage
-  def handle_info({:ack, _ref, [], [%Broadway.Message{data: {producer_id, records}}]=failed_msgs}, state) do
+  def handle_info({:ack, _ref, [], [%Broadway.Message{data: {producer_id, records}}] = failed_msgs}, state) do
     Logger.info "Messages failed #{
       records
       |> inspect
@@ -70,16 +79,18 @@ defmodule KinesisProducer do
 
   @impl GenStage
   def handle_info(
-        {:ack, _ref, [%Broadway.Message{data: {producer_id, records}}]=success_msgs, []},
+        {:ack, _ref, [%Broadway.Message{data: {producer_id, records}}] = success_msgs, []},
         {producer_id, stream_name, shard_id, batch_size, shard_iterator, next_shard_iterator}
       ) do
 
     Logger.info "CSI: #{shard_iterator}, NCSI: #{next_shard_iterator}"
     if records != [] do
       %{"SequenceNumber" => sequence_number} = records
-      |> Enum.reverse
-      |> hd()
-      KinesisState.update_checkpoint(%KinesisCheckpoint{stream_name: stream_name, shard_id: shard_id, checkpoint: sequence_number})
+                                               |> Enum.reverse
+                                               |> hd()
+      KinesisState.update_checkpoint(
+        %KinesisCheckpoint{stream_name: stream_name, shard_id: shard_id, checkpoint: sequence_number}
+      )
     end
 
     {:noreply, [], {producer_id, stream_name, shard_id, batch_size, next_shard_iterator, next_shard_iterator}}

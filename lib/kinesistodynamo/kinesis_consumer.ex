@@ -10,11 +10,11 @@ defmodule KinesisConsumer do
       producer: [
         module: {KinesisProducer, []},
         #transformer: {__MODULE__, :transform, []},
-        concurrency: 1
+        concurrency: ShardRegistry.get_shard_count
       ],
       processors: [
         default: [
-          concurrency: 1,
+          concurrency: ShardRegistry.get_shard_count,
           min_demand: 0,
           max_demand: 1
         ]
@@ -37,7 +37,7 @@ defmodule KinesisConsumer do
 
   @impl true
   def handle_message(_, %{data: {_, records}} = message, _) do
-    Logger.info "************ SUCCESSFUL MESSAGE ========> "
+    Logger.info "************ SUCCESSFUL MESSAGE ========>"
     # str = records |> Enum.map(&(&1 |> Map.get("Data") |> Base.decode64 |> elem(1))) |> Enum.join(".......")
     # str |> String.split("\t") |> Enum.each(&IO.puts/1)
     # Logger.info "*********===========++++++++++++ #{str |> String.split("\t") |> Enum.count}+++++++++++++++++++++"
